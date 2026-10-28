@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Jurnalistik & Kartu Petunjuk Penulisan Berita</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Journalist Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Playfair Display for Newspaper Vibe -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        newsBlue: '#1e3a8a',
+                        newsRed: '#dc2626',
+                        newsYellow: '#f59e0b',
+                        newsGreen: '#10b981',
+                        newsPurple: '#8b5cf6'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .newspaper-grid {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+        .text-headline {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* PRINT STYLES FOR EXPORT PDF / PRINTING */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                font-size: 12pt;
+            }
+            /* Hide all UI elements except printable area */
+            header, footer, nav, .no-print, #tab-dashboard, #tab-5w1h, #tab-kerangka, #tab-berita, .toast-notification, .modal-backdrop, #pdf-help-modal {
+                display: none !important;
+            }
+            #tab-workspace {
+                display: block !important;
+            }
+            #printable-article {
+                border: 2px solid #000 !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 20px !important;
+                page-break-inside: avoid;
+            }
+            .print-btn-bar {
+                display: none !important;
+            }
+        }
+
+        /* Cetak / PDF khusus Berita Utuh */
+        #print-berita { display: none; }
+        @media print {
+            body.print-berita main { display: none !important; }
+            body.print-berita #print-berita {
+                display: block !important;
+                border: 2px solid #000;
+                padding: 28px;
+                font-family: Georgia, 'Times New Roman', serif;
+                color: #000;
+            }
+            #pb-label { text-align: center; font-size: 10pt; letter-spacing: 3px; font-weight: bold; margin: 0 0 6px; }
+            #pb-judul { text-align: center; font-size: 22pt; line-height: 1.2; font-weight: 900; margin: 0 0 8px; }
+            #pb-meta { text-align: center; font-size: 10pt; border-bottom: 2px solid #000; padding-bottom: 12px; margin: 0 0 16px; }
+            #pb-isi p { text-align: justify; font-size: 12pt; line-height: 1.6; margin: 0 0 12px; white-space: pre-line; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col newspaper-grid">
+
+    
+    <!-- LOGIN SCREEN: murid memasukkan nama sebelum masuk -->
+    <div id="login-screen" class="fixed inset-0 z-[60] bg-slate-900 flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-3xl shadow-2xl border-4 border-slate-900 max-w-md w-full p-6 md:p-8 text-center">
+            <span class="inline-flex items-center gap-1 bg-yellow-400 text-red-950 font-black text-xs uppercase px-2.5 py-1 rounded tracking-wider">
+                <i class="fa-solid fa-newspaper"></i> Edisi Edukasi Jurnalistik
+            </span>
+            <h1 class="font-serif text-3xl md:text-4xl font-black text-slate-900 uppercase mt-4 leading-tight">Warta Jurnalistik Muda</h1>
+            <p class="text-slate-600 text-sm mt-2 font-serif italic">Panduan Interaktif Menulis Berita 5W+1H dan Kerangka Berita</p>
+            <div class="border-t border-slate-300 my-5"></div>
+            <label for="login-name" class="block text-left text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                <i class="fa-solid fa-user-pen text-blue-600"></i> Tuliskan namamu
+            </label>
+            <input id="login-name" type="text" maxlength="40" autocomplete="off" placeholder="Contoh: Siti Aisyah"
+                   onkeydown="if(event.key==='Enter'){loginWriter();}"
+                   class="w-full border-2 border-slate-300 focus:border-blue-600 focus:outline-none rounded-xl px-4 py-3 text-base font-semibold text-slate-900">
+            <p id="login-error" class="hidden text-left text-xs text-red-600 font-bold mt-2"></p>
+            <p class="text-left text-xs text-slate-500 mt-2">Namamu akan tampil sebagai penulis pada hasil beritamu. Isian tersimpan hanya di perangkat ini.</p>
+            <button onclick="loginWriter()" class="mt-5 w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i> Masuk ke Ruang Redaksi
+            </button>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 no-print"></div>
+
+    <!-- CUSTOM CONFIRMATION MODAL (RESET ALL) -->
+    <div id="reset-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full mx-4 shadow-2xl border-2 border-red-200 animate-in fade-in zoom-in duration-200">
+            <div class="w-14 h-14 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center text-2xl mx-auto mb-4">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <h3 class="text-2xl font-black text-center text-slate-900 font-serif mb-2">Reset Semua Draf?</h3>
+            <p class="text-slate-600 text-sm text-center mb-6 leading-relaxed">
+                Tindakan ini akan <span class="font-bold text-red-600">menghapus seluruh isian</span> Unsur 5W+1H dan Kerangka Berita secara permanen dari memori browser.
+            </p>
+            <div class="flex gap-3">
+                <button onclick="closeResetModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-sm">
+                    Batal
+                </button>
+                <button onclick="confirmResetAll()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-lg transition text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-trash"></i> Ya, Hapus Semua
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: UNDUHAN TIDAK TERSEDIA DI TAMPILAN SEMATAN -->
+    <div id="frame-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full mx-4 shadow-2xl border-2 border-amber-200">
+            <h3 class="text-xl font-black text-slate-900 font-serif mb-2"><i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Unduhan tidak tersedia di tampilan ini</h3>
+            <p class="text-slate-600 text-sm mb-3 leading-relaxed">Halaman ini dibuka di dalam situs lain sehingga browser memblokir unduhan dan cetak PDF. Kamu tetap bisa <b>menyalin teksnya</b> di bawah ini lalu menempelkannya di Word atau Google Docs.</p>
+            <textarea id="frame-text" readonly class="w-full h-48 text-xs p-3 border rounded-xl bg-slate-50 font-mono"></textarea>
+            <div class="flex flex-wrap gap-2 mt-4">
+                <button onclick="copyFrameText()" class="flex-1 min-w-[120px] bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-sm"><i class="fa-solid fa-copy"></i> Salin Teks</button>
+                <button id="frame-open-full" onclick="openFullSite()" class="hidden flex-1 min-w-[120px] bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm"><i class="fa-solid fa-up-right-from-square"></i> Buka Versi Lengkap</button>
+                <button onclick="closeFrameModal()" class="flex-1 min-w-[120px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-sm">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI KELUAR -->
+    <div id="logout-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full mx-4 shadow-2xl border-2 border-amber-200">
+            <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </div>
+            <h3 class="text-2xl font-black text-center text-slate-900 font-serif mb-2">Yakin mau keluar?</h3>
+            <p class="text-slate-600 text-sm text-center mb-6 leading-relaxed">
+                Drafmu sudah <span class="font-bold text-emerald-700">tersimpan otomatis</span> di perangkat ini. Setelah keluar, teman lain bisa masuk dengan menuliskan namanya.
+            </p>
+            <div class="flex gap-3">
+                <button onclick="closeLogoutModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-sm">
+                    Tidak, tetap di sini
+                </button>
+                <button onclick="confirmLogout()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-lg transition text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-from-bracket"></i> Ya, keluar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GANTI NAMA -->
+    <div id="rename-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full mx-4 shadow-2xl border-2 border-blue-200">
+            <div class="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-2xl mx-auto mb-4">
+                <i class="fa-solid fa-user-pen"></i>
+            </div>
+            <h3 class="text-2xl font-black text-center text-slate-900 font-serif mb-2">Ganti Nama</h3>
+            <p class="text-slate-600 text-sm text-center mb-4 leading-relaxed">Ada nama yang keliru? Perbaiki di sini. Isianmu tetap ikut pindah ke nama yang baru.</p>
+            <input id="rename-input" type="text" maxlength="40" autocomplete="off" onkeydown="if(event.key==='Enter'){saveRename();}"
+                   class="w-full border-2 border-slate-300 focus:border-blue-600 focus:outline-none rounded-xl px-4 py-3 text-base font-semibold text-slate-900">
+            <p id="rename-error" class="hidden text-xs text-red-600 font-bold mt-2"></p>
+            <div class="flex gap-3 mt-5">
+                <button onclick="closeRename()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-sm">Batal</button>
+                <button onclick="saveRename()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check"></i> Simpan Nama
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF HELPER GUIDANCE MODAL -->
+    <div id="pdf-help-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full mx-4 shadow-2xl border-2 border-emerald-300 animate-in fade-in zoom-in duration-200">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-xl font-bold text-slate-900 font-serif flex items-center gap-2">
+                    <i class="fa-solid fa-file-pdf text-red-600"></i> Cara Simpan Sebagai PDF di HP &amp; Laptop
+                </h3>
+                <button onclick="closePdfHelpModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            
+            <div class="space-y-4 text-xs md:text-sm text-slate-700 leading-relaxed">
+                <div class="bg-blue-50 p-3.5 rounded-2xl border border-blue-200">
+                    <h4 class="font-bold text-blue-900 mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-mobile-screen-button text-blue-600"></i> Bagi Pengguna HP (Android / iPhone):
+                    </h4>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-700">
+                        <li>Tekan tombol <b>"Proses Cetak / Simpan PDF"</b> di bawah.</li>
+                        <li>Pada tampilan pratinjau, klik menu dropdown <i>Pencetak / Printer</i> di paling atas.</li>
+                        <li>Pilih <b>"Simpan sebagai PDF"</b> (atau <i>Save as PDF</i>).</li>
+                        <li>Tekan tombol ikon <b>PDF/Download</b> untuk menyimpan langsung ke folder HP.</li>
+                    </ol>
+                </div>
+
+                <div class="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200">
+                    <h4 class="font-bold text-emerald-900 mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-laptop text-emerald-600"></i> Bagi Pengguna Laptop / PC:
+                    </h4>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-700">
+                        <li>Tekan tombol <b>"Proses Cetak / Simpan PDF"</b>.</li>
+                        <li>Di jendela cetak, ganti <i>Destination</i> menjadi <b>Save as PDF</b>.</li>
+                        <li>Klik <b>Save / Simpan</b> dan pilih folder penyimpanan di laptopmu.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="mt-6 flex gap-3">
+                <button onclick="closePdfHelpModal()" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-xs">
+                    Tutup
+                </button>
+                <button onclick="executePrint()" class="w-2/3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg transition text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-print"></i> Lanjutkan Cetak / PDF Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOP ANNOUNCEMENT BAR / BREAKING NEWS -->
+    <div class="bg-red-600 text-white py-1.5 px-4 text-xs md:text-sm font-semibold flex items-center shadow-md z-40 no-print">
+        <span class="bg-yellow-400 text-red-950 font-black px-2 py-0.5 rounded tracking-wider uppercase mr-3 animate-pulse flex items-center gap-1 shrink-0">
+            <i class="fa-solid fa-bolt"></i> BREAKING NEWS
+        </span>
+        <div class="overflow-hidden whitespace-nowrap w-full">
+            <span class="inline-block animate-marquee">
+                Pelajari cara menyusun berita yang tajam, akurat, dan berbobot dengan Kartu Petunjuk 5W+1H & Kerangka Berita!
+            </span>
+        </div>
+    </div>
+
+    <!-- MAIN HEADER / NEWSPAPER BANNER -->
+    <header class="bg-white border-b-4 border-slate-900 shadow-lg no-print">
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-center border-b border-slate-300 pb-4 mb-4 gap-4">
+                <div class="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <span><i class="fa-solid fa-newspaper text-blue-600"></i> EDISI EDUKASI JURNALISTIK</span>
+                    <span>•</span>
+                    <span id="current-date">Senin, 12 Oktober 2026</span>
+                </div>
+                <!-- TOP TOOLBAR BUTTONS -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <span id="writer-chip" class="hidden text-xs bg-blue-50 text-blue-900 font-bold pl-3 pr-1.5 py-1 rounded-full border border-blue-200 items-center gap-2">
+                        <span><i class="fa-solid fa-user-pen text-blue-600"></i> Penulis: <span id="writer-name-chip" class="font-extrabold">-</span></span>
+                        <button onclick="openRename()" class="bg-white hover:bg-blue-100 text-blue-700 font-bold px-2.5 py-0.5 rounded-full border border-blue-200 transition flex items-center gap-1"><i class="fa-solid fa-pen"></i> Ganti nama</button>
+                        <button onclick="requestLogout()" class="bg-white hover:bg-red-50 text-red-600 font-bold px-2.5 py-0.5 rounded-full border border-red-200 transition flex items-center gap-1"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
+                    </span>
+                    <span id="save-status-indicator" class="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1.5 rounded-full border border-emerald-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-check text-emerald-500"></i> Tersimpan
+                    </span>
+                    <button onclick="downloadAsTextFile()" class="text-xs bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1">
+                        <i class="fa-solid fa-download"></i> Unduh TXT
+                    </button>
+                    <button onclick="openResetModal()" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-lg border border-red-200 transition flex items-center gap-1">
+                        <i class="fa-solid fa-trash-arrow-up"></i> Reset Draf
+                    </button>
+                </div>
+            </div>
+
+            <!-- MASTHEAD -->
+            <div class="text-center my-2">
+                <h1 class="text-Headline text-4xl md:text-6xl font-black tracking-tight text-slate-900 uppercase">
+                    Warta Jurnalistik Muda
+                </h1>
+                <p class="text-slate-600 italic mt-2 text-sm md:text-base font-serif">
+                    "Panduan Interaktif Pengembangan Keterampilan Menulis Berita 5W+1H dan Kerangka Terstruktur"
+                </p>
+            </div>
+
+            <!-- MAIN NAVIGATION TABS -->
+            <nav class="flex flex-wrap justify-center gap-2 md:gap-4 mt-6">
+                <button id="nav-dashboard" onclick="switchMainTab('dashboard')" class="px-5 py-2.5 rounded-xl font-bold text-sm md:text-base transition duration-200 flex items-center gap-2 shadow-sm border bg-blue-600 text-white border-blue-700">
+                    <i class="fa-solid fa-house"></i> Halaman Utama
+                </button>
+                <button id="nav-5w1h" onclick="switchMainTab('5w1h')" class="px-5 py-2.5 rounded-xl font-bold text-sm md:text-base transition duration-200 flex items-center gap-2 shadow-sm border bg-white text-slate-700 hover:bg-amber-50 hover:text-amber-600 border-slate-300">
+                    <i class="fa-solid fa-cubes text-amber-500"></i> Unsur 5W + 1H
+                </button>
+                <button id="nav-kerangka" onclick="switchMainTab('kerangka')" class="px-5 py-2.5 rounded-xl font-bold text-sm md:text-base transition duration-200 flex items-center gap-2 shadow-sm border bg-white text-slate-700 hover:bg-purple-50 hover:text-purple-600 border-slate-300">
+                    <i class="fa-solid fa-sitemap text-purple-500"></i> Kerangka Berita
+                </button>
+                <button id="nav-berita" onclick="switchMainTab('berita')" class="px-5 py-2.5 rounded-xl font-bold text-sm md:text-base transition duration-200 flex items-center gap-2 shadow-sm border bg-white text-slate-700 hover:bg-teal-50 hover:text-teal-600 border-slate-300">
+                    <i class="fa-solid fa-feather-pointed text-teal-500"></i> Tulis Berita Utuh
+                </button>
+                <button id="nav-workspace" onclick="switchMainTab('workspace')" class="px-5 py-2.5 rounded-xl font-bold text-sm md:text-base transition duration-200 flex items-center gap-2 shadow-sm border bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700">
+                    <i class="fa-solid fa-pen-to-square"></i> Ruang Redaksi (Draf &amp; Unduh)
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <!-- BANNER: muncul hanya saat website dibuka di dalam halaman lain (mis. Google Sites) -->
+    <div id="frame-banner" class="hidden no-print bg-amber-100 border-b-2 border-amber-300 text-amber-900 text-xs md:text-sm px-4 py-2.5 text-center">
+        <i class="fa-solid fa-circle-info"></i>
+        Kamu membuka website ini di dalam halaman lain. Tombol <b>unduh dan cetak PDF</b> bisa terblokir di sini.
+        <span id="frame-banner-full" class="hidden">Buka <button onclick="openFullSite()" class="underline font-bold">versi lengkap di tab baru</button>, atau</span>
+        gunakan <b>Salin Teks</b>.
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+
+        <!-- ================= DASHBOARD TAB ================= -->
+        <div id="tab-dashboard" class="space-y-8">
+            <!-- HERO SECTION -->
+            <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-3xl p-6 md:p-10 shadow-xl relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 opacity-10 text-white">
+                    <i class="fa-solid fa-newspaper text-9xl"></i>
+                </div>
+                <div class="max-w-3xl relative z-10">
+                    <span class="bg-amber-400 text-slate-900 text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full mb-4 inline-block">
+                        Media Pembelajaran Penulisan
+                    </span>
+                    <h2 class="text-3xl md:text-5xl font-black font-serif leading-tight mb-4">
+                        Kuasai Seni Menulis Berita yang Menarik &amp; Informatif
+                    </h2>
+                    <p class="text-slate-300 text-base md:text-lg mb-6 leading-relaxed">
+                        Selamat datang di Portal Kartu Petunjuk Jurnalistik! Gunakan alat peraga digital ini untuk membantu menyusun berita secara bertahap. Hasil tulisanmu bisa diunduh sebagai file teks (.TXT), file backup (.JSON), atau dicetak/disimpan langsung sebagai file PDF ke HP atau laptopmu!
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <button onclick="switchMainTab('5w1h')" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold px-6 py-3 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 flex items-center gap-2">
+                            Mulai Unsur 5W+1H <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                        <button onclick="switchMainTab('kerangka')" class="bg-white/10 hover:bg-white/20 text-white border border-white/30 font-bold px-6 py-3 rounded-xl backdrop-blur-sm transition flex items-center gap-2">
+                            Lihat Kerangka Berita <i class="fa-solid fa-sitemap"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2 MAIN CATEGORY COLUMNS -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <!-- COLUMN 1: UNSUR 5W+1H -->
+                <div class="bg-white rounded-3xl p-6 md:p-8 shadow-md border-2 border-amber-200 hover:border-amber-400 transition flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl font-black">
+                                    <i class="fa-solid fa-cubes"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-slate-900 font-serif">1. Unsur 5W + 1H</h3>
+                                    <p class="text-xs text-slate-500">6 Fondasi Utama Berita Kompleks</p>
+                                </div>
+                            </div>
+                            <span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full">6 Kartu</span>
+                        </div>
+                        <p class="text-slate-600 text-sm mb-6 leading-relaxed">
+                            Mengumpulkan bahan fakta berita dasar. Kartu interaktif ini akan membantu mendetailkan informasi tentang peristiwa secara mendalam.
+                        </p>
+                        <!-- Grid 6 Elements -->
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                            <button onclick="selectElement('apa')" class="p-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-center font-bold text-amber-900 transition flex flex-col items-center gap-1">
+                                <i class="fa-solid fa-circle-question text-amber-600 text-lg"></i>
+                                <span>Apa</span>
+                            </button>
+                            <button onclick="selectElement('siapa')" class="p-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-center font-bold text-amber-900 transition flex flex-col items-center gap-1">
+                                <i class="fa-solid fa-user-group text-amber-600 text-lg"></i>
+                                <span>Siapa</span>
+                            </button>
+                            <button onclick="selectElement('dimana')" class="p-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-center font-bold text-amber-900 transition flex flex-col items-center gap-1">
+                                <i class="fa-solid fa-location-dot text-amber-600 text-lg"></i>
+                                <span>Di mana</span>
+                            </button>
+                            <button onclick="selectElement('kapan')" class="p-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-center font-bold text-amber-900 transition flex flex-col items-center gap-1">
+                                <i class="fa-solid fa-calendar-days text-amber-600 text-lg"></i>
+                                <span>Kapan</span>
+                            </button>
+                            <button onclick="selectElement('mengapa')" class="p-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-center font-bold text-amber-900 transition flex flex-col items-center gap-1">
+                                <i class="fa-solid fa-lightbulb text-amber-600 text-lg"></i>
+                                <span>Mengapa</span>
+                            </button>
+                            <button onclick="selectElement('bagaimana')" class="p-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-center font-bold text-amber-900 transition flex flex-col items-center gap-1">
+                                <i class="fa-solid fa-route text-amber-600 text-lg"></i>
+                                <span>Bagaimana</span>
+                            </button>
+                        </div>
+                    </div>
+                    <button onclick="switchMainTab('5w1h')" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl transition text-center shadow-md">
+                        Buka Kartu 5W+1H <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- COLUMN 2: KERANGKA BERITA -->
+                <div class="bg-white rounded-3xl p-6 md:p-8 shadow-md border-2 border-purple-200 hover:border-purple-400 transition flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-2xl font-black">
+                                    <i class="fa-solid fa-sitemap"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-slate-900 font-serif">2. Kerangka Berita</h3>
+                                    <p class="text-xs text-slate-500">Struktur Piramida Terbalik</p>
+                                </div>
+                            </div>
+                            <span class="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-1 rounded-full">4 Bagian</span>
+                        </div>
+                        <p class="text-slate-600 text-sm mb-6 leading-relaxed">
+                            Menyusun susunan redaksi artikel dari prioritas utama hingga pendukung. Berdasarkan teknik standar jurnalistik terstruktur.
+                        </p>
+                        <!-- Grid 4 Elements -->
+                        <div class="grid grid-cols-2 gap-3 mb-6">
+                            <button onclick="selectKerangka('judul')" class="p-3 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-left font-bold text-purple-900 transition flex items-center gap-3">
+                                <i class="fa-solid fa-heading text-purple-600 text-xl"></i>
+                                <div>
+                                    <div class="text-sm">Judul Berita</div>
+                                    <div class="text-[10px] font-normal text-purple-700">Ringkas &amp; Menarik</div>
+                                </div>
+                            </button>
+                            <button onclick="selectKerangka('teras')" class="p-3 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-left font-bold text-purple-900 transition flex items-center gap-3">
+                                <i class="fa-solid fa-star text-purple-600 text-xl"></i>
+                                <div>
+                                    <div class="text-sm">Teras Berita</div>
+                                    <div class="text-[10px] font-normal text-purple-700">Poin Terpenting (Lead)</div>
+                                </div>
+                            </button>
+                            <button onclick="selectKerangka('tubuh')" class="p-3 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-left font-bold text-purple-900 transition flex items-center gap-3">
+                                <i class="fa-solid fa-align-left text-purple-600 text-xl"></i>
+                                <div>
+                                    <div class="text-sm">Tubuh Berita</div>
+                                    <div class="text-[10px] font-normal text-purple-700">Detail &amp; Kutipan</div>
+                                </div>
+                            </button>
+                            <button onclick="selectKerangka('ekor')" class="p-3 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-left font-bold text-purple-900 transition flex items-center gap-3">
+                                <i class="fa-solid fa-list-check text-purple-600 text-xl"></i>
+                                <div>
+                                    <div class="text-sm">Ekor Berita</div>
+                                    <div class="text-[10px] font-normal text-purple-700">Informasi Tambahan</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    <button onclick="switchMainTab('kerangka')" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition text-center shadow-md">
+                        Buka Kerangka Berita <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- CASE STUDY BANNER (TOPIK KANTIN SEHAT) -->
+            <div class="bg-amber-50 rounded-2xl p-6 border-2 border-dashed border-amber-300 flex flex-col md:flex-row items-center gap-6">
+                <div class="bg-amber-400 text-slate-900 p-4 rounded-2xl text-3xl font-black shrink-0">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                <div class="flex-grow text-center md:text-left">
+                    <span class="text-xs font-bold uppercase tracking-wider text-amber-800 bg-amber-200/70 px-2.5 py-0.5 rounded">Studi Kasus Referensi</span>
+                    <h4 class="text-xl font-bold text-slate-900 font-serif mt-1">Topik Contoh: "Program Kantin Sehat Sekolah"</h4>
+                    <p class="text-slate-600 text-sm mt-1">
+                        Seluruh contoh praktis pada kartu petunjuk menggunakan skenario peluncuran menu kantin sehat oleh OSIS. <i>"Tiru caranya, bukan isinya!"</i>
+                    </p>
+                </div>
+                <button onclick="switchMainTab('workspace')" class="shrink-0 bg-slate-900 hover:bg-slate-800 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition">
+                    Mulai Tulis Topik Sendiri <i class="fa-solid fa-pen"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= TAB 1: UNSUR 5W+1H ================= -->
+        <div id="tab-5w1h" class="hidden space-y-6">
+
+            <!-- Category Selector Buttons -->
+            <div class="bg-white p-3 rounded-2xl shadow-sm border flex flex-wrap justify-center gap-2">
+                <button id="btn-5w1h-apa" onclick="selectElement('apa')" class="px-4 py-2 rounded-xl font-bold text-sm transition flex items-center gap-2 border">
+                    <i class="fa-solid fa-circle-question"></i> Apa
+                </button>
+                <button id="btn-5w1h-siapa" onclick="selectElement('siapa')" class="px-4 py-2 rounded-xl font-bold text-sm transition flex items-center gap-2 border">
+                    <i class="fa-solid fa-user-group"></i> Siapa
+                </button>
+                <button id="btn-5w1h-dimana" onclick="selectElement('dimana')" class="px-4 py-2 rounded-xl font-bold text-sm transition flex items-center gap-2 border">
+                    <i class="fa-solid fa-location-dot"></i> Di mana
+                </button>
+                <button id="btn-5w1h-kapan" onclick="selectElement('kapan')" class="px-4 py-2 rounded-xl font-bold text-sm transition flex items-center gap-2 border">
+                    <i class="fa-solid fa-calendar-days"></i> Kapan
+                </button>
+                <button id="btn-5w1h-mengapa" onclick="selectElement('mengapa')" class="px-4 py-2 rounded-xl font-bold text-sm transition flex items-center gap-2 border">
+                    <i class="fa-solid fa-lightbulb"></i> Mengapa
+                </button>
+                <button id="btn-5w1h-bagaimana" onclick="selectElement('bagaimana')" class="px-4 py-2 rounded-xl font-bold text-sm transition flex items-center gap-2 border">
+                    <i class="fa-solid fa-route"></i> Bagaimana
+                </button>
+            </div>
+
+            <!-- INTERACTIVE CARD CONTAINER FOR 5W+1H -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                <!-- CARD DISPLAY (3 STEPS: PETUNJUK 1 -> PETUNJUK 2 -> CONTOH) -->
+                <div class="lg:col-span-7 bg-white rounded-3xl p-6 md:p-8 shadow-xl border-2 border-slate-200 relative">
+                    
+                    <!-- Card Top Header -->
+                    <div class="flex items-center justify-between border-b pb-4 mb-6">
+                        <div class="flex items-center gap-3">
+                            <span id="card-5w1h-badge" class="px-3 py-1 bg-amber-100 text-amber-800 font-black rounded-lg text-lg uppercase tracking-wide">
+                                APA
+                            </span>
+                            <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Kartu Petunjuk 5W+1H</span>
+                        </div>
+                        <!-- Step Indicator -->
+                        <div class="flex items-center gap-1.5" id="step-dots-5w1h">
+                            <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                            <span class="w-3 h-3 rounded-full bg-slate-200"></span>
+                            <span class="w-3 h-3 rounded-full bg-slate-200"></span>
+                        </div>
+                    </div>
+
+                    <!-- STEP 1: PETUNJUK 1 -->
+                    <div id="step-5w1h-1" class="space-y-6">
+                        <div class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-xl">
+                            <span class="text-xs font-bold text-amber-800 uppercase tracking-widest block mb-1">Tahap 1: Pertanyaan Pemicu</span>
+                            <h3 class="text-2xl font-bold text-slate-900 font-serif" id="title-5w1h-p1">
+                                Petunjuk 1
+                            </h3>
+                        </div>
+                        
+                        <div class="text-slate-700 text-lg leading-relaxed bg-slate-50 p-6 rounded-2xl border min-h-[140px] flex items-center" id="text-5w1h-p1">
+                            Peristiwa apa yang paling penting dan terjadi? Tulis dalam satu kalimat singkat.
+                        </div>
+
+                        <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-xs text-blue-800 flex items-center gap-3">
+                            <i class="fa-solid fa-circle-info text-blue-500 text-lg"></i>
+                            <span>Tulis dulu jawabanmu sendiri di catatan sebelah kanan. Jika macet, klik tombol bantuan di bawah!</span>
+                        </div>
+
+                        <div class="flex justify-end pt-2">
+                            <button onclick="goTo5w1hStep(2)" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-6 py-3 rounded-xl shadow-md transition flex items-center gap-2">
+                                Butuh Bantuan Lagi <i class="fa-solid fa-circle-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: PETUNJUK 2 -->
+                    <div id="step-5w1h-2" class="hidden space-y-6">
+                        <div class="bg-indigo-50 border-l-4 border-indigo-500 p-5 rounded-r-xl">
+                            <span class="text-xs font-bold text-indigo-800 uppercase tracking-widest block mb-1">Tahap 2: Panduan Spesifik</span>
+                            <h3 class="text-2xl font-bold text-slate-900 font-serif" id="title-5w1h-p2">
+                                Petunjuk 2
+                            </h3>
+                        </div>
+                        
+                        <div class="text-slate-700 text-lg leading-relaxed bg-slate-50 p-6 rounded-2xl border min-h-[140px] flex items-center" id="text-5w1h-p2">
+                            Pastikan kalimatnya memuat kegiatan inti, bukan hanya nama acaranya. Gunakan kata kerja, misalnya meluncurkan, menggelar, meraih.
+                        </div>
+
+                        <div class="flex justify-between items-center pt-2">
+                            <button onclick="goTo5w1hStep(1)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-5 py-2.5 rounded-xl transition text-sm">
+                                <i class="fa-solid fa-arrow-left"></i> Kembali ke Petunjuk 1
+                            </button>
+                            <button onclick="goTo5w1hStep(3)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl shadow-md transition flex items-center gap-2">
+                                Lihat Contoh <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: CONTOH -->
+                    <div id="step-5w1h-3" class="hidden space-y-6">
+                        <div class="bg-emerald-50 border-l-4 border-emerald-500 p-5 rounded-r-xl">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-emerald-800 uppercase tracking-widest block">Tahap 3: Contoh Pengaplikasian</span>
+                                <span class="text-[10px] bg-emerald-200 text-emerald-900 font-extrabold px-2 py-0.5 rounded">Topik: Kantin Sehat</span>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-900 font-serif mt-1">
+                                Contoh Konkret
+                            </h3>
+                        </div>
+                        
+                        <div class="bg-slate-900 text-amber-300 p-6 rounded-2xl shadow-inner font-serif text-lg leading-relaxed border border-slate-700" id="text-5w1h-contoh">
+                            "Sekolah meluncurkan program 'Kantin Sehat' yang menyediakan menu rendah gula dan membatasi gorengan."
+                        </div>
+
+                        <div class="bg-amber-100 text-amber-900 text-xs font-semibold p-3.5 rounded-xl flex items-center gap-2 border border-amber-300">
+                            <i class="fa-solid fa-lightbulb text-amber-600 text-base"></i>
+                            <span><b>Catatan Penting:</b> Contoh di atas adalah topik Kantin Sehat. Tiru cara penyusunannya, bukan isinya!</span>
+                        </div>
+
+                        <div class="flex justify-between items-center pt-2">
+                            <button onclick="goTo5w1hStep(2)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-5 py-2.5 rounded-xl transition text-sm">
+                                <i class="fa-solid fa-arrow-left"></i> Kembali ke Petunjuk 2
+                            </button>
+                            <button onclick="goTo5w1hStep(1)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl transition text-sm">
+                                Ulangi dari Awal <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- RIGHT SIDE WRITING PAD FOR 5W+1H -->
+                <div class="lg:col-span-5 bg-white rounded-3xl p-6 shadow-xl border-2 border-slate-200">
+                    <div class="flex items-center justify-between border-b pb-3 mb-4">
+                        <h4 class="font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-pen-nib text-amber-500"></i> Isian Unsur Berita
+                        </h4>
+                        <span class="text-xs text-slate-400 flex items-center gap-1">
+                            <i class="fa-solid fa-cloud text-emerald-500"></i> Auto-Save
+                        </span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold uppercase text-slate-600">Peristiwa (Apa)</label>
+                                <span id="count-apa" class="text-[10px] text-slate-400">0 kata</span>
+                            </div>
+                            <textarea id="input-apa" oninput="saveInput('apa')" placeholder="Tuliskan kejadian inti menggunakan kata kerja..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none h-16 bg-slate-50"></textarea>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold uppercase text-slate-600">Pelaku/Pihak (Siapa)</label>
+                                <span id="count-siapa" class="text-[10px] text-slate-400">0 kata</span>
+                            </div>
+                            <textarea id="input-siapa" oninput="saveInput('siapa')" placeholder="Siapa pelaku utama &amp; pihak terdampak..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none h-16 bg-slate-50"></textarea>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold uppercase text-slate-600">Lokasi (Di mana)</label>
+                                <span id="count-dimana" class="text-[10px] text-slate-400">0 kata</span>
+                            </div>
+                            <input id="input-dimana" oninput="saveInput('dimana')" type="text" placeholder="Tempat spesifik (ruangan/bagian)..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none bg-slate-50">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold uppercase text-slate-600">Waktu (Kapan)</label>
+                                <span id="count-kapan" class="text-[10px] text-slate-400">0 kata</span>
+                            </div>
+                            <input id="input-kapan" oninput="saveInput('kapan')" type="text" placeholder="Hari, tanggal, jam..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none bg-slate-50">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold uppercase text-slate-600">Alasan (Mengapa)</label>
+                                <span id="count-mengapa" class="text-[10px] text-slate-400">0 kata</span>
+                            </div>
+                            <textarea id="input-mengapa" oninput="saveInput('mengapa')" placeholder="Minimal 2 penyebab pemicu..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none h-16 bg-slate-50"></textarea>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold uppercase text-slate-600">Proses (Bagaimana)</label>
+                                <span id="count-bagaimana" class="text-[10px] text-slate-400">0 kata</span>
+                            </div>
+                            <textarea id="input-bagaimana" oninput="saveInput('bagaimana')" placeholder="Kronologi awal hingga akhir &amp; detail..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none h-16 bg-slate-50"></textarea>
+                        </div>
+                    </div>
+
+                    <button onclick="switchMainTab('workspace')" class="w-full mt-4 bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                        Pindahkan ke Ruang Redaksi Draf <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: KERANGKA BERITA ================= -->
+        <div id="tab-kerangka" class="hidden space-y-6">
+
+            <!-- Category Selector Buttons -->
+            <div class="bg-white p-3 rounded-2xl shadow-sm border flex flex-wrap justify-center gap-2">
+                <button id="btn-kerangka-judul" onclick="selectKerangka('judul')" class="px-5 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 border">
+                    <i class="fa-solid fa-heading"></i> Judul Berita
+                </button>
+                <button id="btn-kerangka-teras" onclick="selectKerangka('teras')" class="px-5 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 border">
+                    <i class="fa-solid fa-star"></i> Teras Berita (Lead)
+                </button>
+                <button id="btn-kerangka-tubuh" onclick="selectKerangka('tubuh')" class="px-5 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 border">
+                    <i class="fa-solid fa-align-left"></i> Tubuh Berita (Body)
+                </button>
+                <button id="btn-kerangka-ekor" onclick="selectKerangka('ekor')" class="px-5 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 border">
+                    <i class="fa-solid fa-list-check"></i> Ekor Berita (Tail)
+                </button>
+            </div>
+
+            <!-- INTERACTIVE CARD CONTAINER FOR KERANGKA -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                <!-- CARD DISPLAY (3 STEPS) -->
+                <div class="lg:col-span-7 bg-white rounded-3xl p-6 md:p-8 shadow-xl border-2 border-slate-200 relative">
+                    
+                    <!-- Card Top Header -->
+                    <div class="flex items-center justify-between border-b pb-4 mb-6">
+                        <div class="flex items-center gap-3">
+                            <span id="card-kerangka-badge" class="px-3 py-1 bg-purple-100 text-purple-800 font-black rounded-lg text-lg uppercase tracking-wide">
+                                JUDUL
+                            </span>
+                            <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Petunjuk Kerangka Berita</span>
+                        </div>
+                        <!-- Step Indicator -->
+                        <div class="flex items-center gap-1.5" id="step-dots-kerangka">
+                            <span class="w-3 h-3 rounded-full bg-purple-600"></span>
+                            <span class="w-3 h-3 rounded-full bg-slate-200"></span>
+                            <span class="w-3 h-3 rounded-full bg-slate-200"></span>
+                        </div>
+                    </div>
+
+                    <!-- STEP 1: PETUNJUK 1 -->
+                    <div id="step-kerangka-1" class="space-y-6">
+                        <div class="bg-purple-50 border-l-4 border-purple-500 p-5 rounded-r-xl">
+                            <span class="text-xs font-bold text-purple-800 uppercase tracking-widest block mb-1">Tahap 1: Pertanyaan Fokus</span>
+                            <h3 class="text-2xl font-bold text-slate-900 font-serif" id="title-kerangka-p1">
+                                Petunjuk 1
+                            </h3>
+                        </div>
+                        
+                        <div class="text-slate-700 text-lg leading-relaxed bg-slate-50 p-6 rounded-2xl border min-h-[140px] flex items-center" id="text-kerangka-p1">
+                            Apa inti peristiwa yang paling ingin kamu kabarkan? Pilih satu saja.
+                        </div>
+
+                        <div class="bg-purple-50 border border-purple-200 p-4 rounded-xl text-xs text-purple-800 flex items-center gap-3">
+                            <i class="fa-solid fa-lightbulb text-purple-600 text-lg"></i>
+                            <span>Tulis kerangkamu sendiri terlebih dahulu. Jika macet, gunakan tombol petunjuk di bawah!</span>
+                        </div>
+
+                        <div class="flex justify-end pt-2">
+                            <button onclick="goToKerangkaStep(2)" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-3 rounded-xl shadow-md transition flex items-center gap-2">
+                                Butuh Bantuan Lagi <i class="fa-solid fa-circle-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: PETUNJUK 2 -->
+                    <div id="step-kerangka-2" class="hidden space-y-6">
+                        <div class="bg-indigo-50 border-l-4 border-indigo-500 p-5 rounded-r-xl">
+                            <span class="text-xs font-bold text-indigo-800 uppercase tracking-widest block mb-1">Tahap 2: Aturan Penulisan Struktur</span>
+                            <h3 class="text-2xl font-bold text-slate-900 font-serif" id="title-kerangka-p2">
+                                Petunjuk 2
+                            </h3>
+                        </div>
+                        
+                        <div class="text-slate-700 text-lg leading-relaxed bg-slate-50 p-6 rounded-2xl border min-h-[140px] flex items-center" id="text-kerangka-p2">
+                            Buat judul sementara yang singkat (sekitar 5-10 kata), memuat peristiwa dan pelaku utama, serta menggunakan kata kerja. Judul boleh direvisi nanti.
+                        </div>
+
+                        <div class="flex justify-between items-center pt-2">
+                            <button onclick="goToKerangkaStep(1)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-5 py-2.5 rounded-xl transition text-sm">
+                                <i class="fa-solid fa-arrow-left"></i> Kembali ke Petunjuk 1
+                            </button>
+                            <button onclick="goToKerangkaStep(3)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl shadow-md transition flex items-center gap-2">
+                                Lihat Contoh <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: CONTOH -->
+                    <div id="step-kerangka-3" class="hidden space-y-6">
+                        <div class="bg-emerald-50 border-l-4 border-emerald-500 p-5 rounded-r-xl">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-emerald-800 uppercase tracking-widest block">Tahap 3: Contoh Kerangka</span>
+                                <span class="text-[10px] bg-emerald-200 text-emerald-900 font-extrabold px-2 py-0.5 rounded">Topik: Kantin Sehat</span>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-900 font-serif mt-1">
+                                Contoh Kerangka Berita
+                            </h3>
+                        </div>
+                        
+                        <div class="bg-slate-900 text-purple-200 p-6 rounded-2xl shadow-inner font-serif text-lg leading-relaxed border border-slate-700 whitespace-pre-line" id="text-kerangka-contoh">
+                            Kantin Sehat Resmi Diluncurkan, Gorengan Dibatasi
+                        </div>
+
+                        <div class="bg-purple-100 text-purple-900 text-xs font-semibold p-3.5 rounded-xl flex items-center gap-2 border border-purple-300">
+                            <i class="fa-solid fa-circle-info text-purple-600 text-base"></i>
+                            <span><b>Tips Penulisan:</b> Contoh diatas menggunakan susunan realistis. Tiru caranya, bukan isinya!</span>
+                        </div>
+
+                        <div class="flex justify-between items-center pt-2">
+                            <button onclick="goToKerangkaStep(2)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-5 py-2.5 rounded-xl transition text-sm">
+                                <i class="fa-solid fa-arrow-left"></i> Kembali ke Petunjuk 2
+                            </button>
+                            <button onclick="goToKerangkaStep(1)" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-5 py-2.5 rounded-xl transition text-sm">
+                                Ulangi dari Awal <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- RIGHT SIDE WRITING PAD FOR KERANGKA -->
+                <div class="lg:col-span-5 bg-white rounded-3xl p-6 shadow-xl border-2 border-slate-200">
+                    <div class="flex items-center justify-between border-b pb-3 mb-4">
+                        <h4 class="font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-pen-fancy text-purple-600"></i> Draf Kerangka Berita
+                        </h4>
+                        <span class="text-xs text-slate-400">Piramida Terbalik</span>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold uppercase text-slate-600">1. Judul Berita</label>
+                                <span id="count-k-judul" class="text-[10px] text-slate-400">0 kata</span>
+                            </div>
+                            <input id="input-k-judul" oninput="saveInput('k-judul')" type="text" placeholder="Singkat (5-10 kata), kata kerja..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-purple-400 focus:outline-none bg-slate-50">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold uppercase text-slate-600">2. Teras Berita (Lead)</label>
+                                <span id="count-k-teras" class="text-[10px] text-slate-400">0 kata</span>
+                            </div>
+                            <textarea id="input-k-teras" oninput="saveInput('k-teras')" placeholder="Poin kata kunci (Apa, Siapa, Kapan, Di mana)..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-purple-400 focus:outline-none h-24 bg-slate-50"></textarea>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold uppercase text-slate-600">3. Tubuh Berita (Body)</label>
+                                <span id="count-k-tubuh" class="text-[10px] text-slate-400">0 kata</span>
+                            </div>
+                            <textarea id="input-k-tubuh" oninput="saveInput('k-tubuh')" placeholder="4 Poin: Penyebab, Jalannya acara, Kutipan, Dampak..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-purple-400 focus:outline-none h-32 bg-slate-50"></textarea>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold uppercase text-slate-600">4. Ekor Berita (Tail)</label>
+                                <span id="count-k-ekor" class="text-[10px] text-slate-400">0 kata</span>
+                            </div>
+                            <textarea id="input-k-ekor" oninput="saveInput('k-ekor')" placeholder="2-3 poin kelanjutan, evaluasi, harapan..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-purple-400 focus:outline-none h-20 bg-slate-50"></textarea>
+                        </div>
+                    </div>
+
+                    <button onclick="switchMainTab('workspace')" class="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                        Pratinjau Hasil Berita Utuh <i class="fa-solid fa-newspaper"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: WORKSPACE / RUANG REDAKSI ================= -->
+        <div id="tab-berita" class="hidden space-y-6">
+
+            <div class="bg-gradient-to-r from-teal-700 to-emerald-700 text-white rounded-3xl p-6 md:p-8 shadow-xl">
+                <span class="inline-flex items-center gap-1 bg-yellow-400 text-red-950 font-black text-xs uppercase px-2.5 py-1 rounded tracking-wider"><i class="fa-solid fa-feather-pointed"></i> Langkah Terakhir</span>
+                <h2 class="font-serif text-2xl md:text-3xl font-black mt-3">Tulis Berita Utuh</h2>
+                <p class="text-teal-50 mt-2 text-sm md:text-base">Gunakan kerangka yang sudah kamu buat sebagai bahan. Kembangkan setiap poin menjadi kalimat, lalu hubungkan menjadi paragraf yang runtut dengan bahasamu sendiri.</p>
+                <p class="mt-3 text-xs md:text-sm font-bold bg-white/15 inline-block px-3 py-1.5 rounded-lg">Poin kerangka &rarr; Kalimat &rarr; Paragraf &rarr; Teks berita utuh</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+                <!-- BAHAN DARI KERANGKA (hanya dibaca) -->
+                <div class="lg:col-span-5 space-y-4 lg:sticky lg:top-4">
+                    <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-purple-200">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-bold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-sitemap text-purple-600"></i> Bahan dari Kerangkamu</h4>
+                            <button onclick="switchMainTab('kerangka')" class="text-xs font-bold text-purple-700 hover:underline">Ubah kerangka</button>
+                        </div>
+                        <div id="guide-empty" class="hidden bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-xl p-3 mb-3">
+                            Kerangkamu belum terisi. Isi dulu di tab <b>Kerangka Berita</b> agar ada bahan untuk dikembangkan.
+                        </div>
+                        <div class="space-y-3 text-sm">
+                            <div><span class="text-[10px] font-black uppercase tracking-widest text-purple-700">Judul</span><p id="guide-judul" class="bg-purple-50 border border-purple-100 rounded-lg p-2.5 mt-1 whitespace-pre-line text-slate-800">-</p></div>
+                            <div><span class="text-[10px] font-black uppercase tracking-widest text-purple-700">Teras</span><p id="guide-teras" class="bg-purple-50 border border-purple-100 rounded-lg p-2.5 mt-1 whitespace-pre-line text-slate-800">-</p></div>
+                            <div><span class="text-[10px] font-black uppercase tracking-widest text-purple-700">Tubuh</span><p id="guide-tubuh" class="bg-purple-50 border border-purple-100 rounded-lg p-2.5 mt-1 whitespace-pre-line text-slate-800">-</p></div>
+                            <div><span class="text-[10px] font-black uppercase tracking-widest text-purple-700">Ekor</span><p id="guide-ekor" class="bg-purple-50 border border-purple-100 rounded-lg p-2.5 mt-1 whitespace-pre-line text-slate-800">-</p></div>
+                        </div>
+                        <details class="mt-4 group">
+                            <summary class="cursor-pointer text-xs font-bold text-amber-700 flex items-center gap-1"><i class="fa-solid fa-cubes"></i> Lihat unsur 5W+1H-mu</summary>
+                            <ul class="mt-2 text-xs text-slate-700 space-y-1.5 bg-amber-50 border border-amber-100 rounded-lg p-3">
+                                <li><b>Apa:</b> <span id="guide-apa">-</span></li>
+                                <li><b>Siapa:</b> <span id="guide-siapa">-</span></li>
+                                <li><b>Di mana:</b> <span id="guide-dimana">-</span></li>
+                                <li><b>Kapan:</b> <span id="guide-kapan">-</span></li>
+                                <li><b>Mengapa:</b> <span id="guide-mengapa">-</span></li>
+                                <li><b>Bagaimana:</b> <span id="guide-bagaimana">-</span></li>
+                            </ul>
+                        </details>
+                    </div>
+
+                    <!-- PETUNJUK BERTINGKAT MENULIS -->
+                    <div class="bg-white rounded-3xl p-5 shadow-lg border-2 border-teal-200">
+                        <h4 class="font-bold text-slate-900 flex items-center gap-2 mb-3"><i class="fa-solid fa-lightbulb text-teal-600"></i> Butuh Bantuan Menulis?</h4>
+                        <p class="text-xs text-slate-500 mb-3">Tulis dulu dengan caramu sendiri. Kalau macet, buka petunjuk satu per satu.</p>
+                        <div class="flex gap-2 mb-3">
+                            <button id="bh-btn-1" onclick="showBeritaHelp(1)" class="flex-1 text-xs font-bold py-2 rounded-lg border bg-white text-slate-700">Petunjuk 1</button>
+                            <button id="bh-btn-2" onclick="showBeritaHelp(2)" class="flex-1 text-xs font-bold py-2 rounded-lg border bg-white text-slate-700">Petunjuk 2</button>
+                            <button id="bh-btn-3" onclick="showBeritaHelp(3)" class="flex-1 text-xs font-bold py-2 rounded-lg border bg-white text-slate-700">Contoh</button>
+                        </div>
+                        <div id="bh-text" class="hidden text-sm leading-relaxed bg-slate-50 border rounded-xl p-4 text-slate-700"></div>
+                    </div>
+                </div>
+
+                <!-- AREA MENULIS -->
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="bg-white rounded-3xl p-5 md:p-6 shadow-xl border-2 border-teal-200">
+                        <div class="flex items-center justify-between border-b pb-3 mb-4">
+                            <h4 class="font-bold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-pen-nib text-teal-600"></i> Teks Berita Utuhku</h4>
+                            <span class="text-xs text-slate-400">Tersimpan otomatis</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="block text-xs font-bold uppercase text-slate-600">1. Judul Berita</label>
+                                    <span id="count-u-judul" class="text-[10px] text-slate-400">0 kata</span>
+                                </div>
+                                <input id="input-u-judul" oninput="saveInput('u-judul')" type="text" placeholder="Judul yang singkat dan sesuai isi..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-teal-400 focus:outline-none bg-slate-50">
+                                <button onclick="useKerangkaJudul()" class="mt-1 text-[11px] font-bold text-teal-700 hover:underline">Pakai judul dari kerangka</button>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="block text-xs font-bold uppercase text-slate-600">2. Teras Berita (paragraf pembuka)</label>
+                                    <span id="count-u-teras" class="text-[10px] text-slate-400">0 kata</span>
+                                </div>
+                                <textarea id="input-u-teras" oninput="saveInput('u-teras')" placeholder="Kembangkan poin teras menjadi kalimat inti dan kalimat pendukung..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-teal-400 focus:outline-none h-28 bg-slate-50"></textarea>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="block text-xs font-bold uppercase text-slate-600">3. Tubuh Berita</label>
+                                    <span id="count-u-tubuh" class="text-[10px] text-slate-400">0 kata</span>
+                                </div>
+                                <textarea id="input-u-tubuh" oninput="saveInput('u-tubuh')" placeholder="Kembangkan tiap poin tubuh menjadi kalimat, lalu hubungkan menjadi paragraf..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-teal-400 focus:outline-none h-48 bg-slate-50"></textarea>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="block text-xs font-bold uppercase text-slate-600">4. Ekor Berita (penutup)</label>
+                                    <span id="count-u-ekor" class="text-[10px] text-slate-400">0 kata</span>
+                                </div>
+                                <textarea id="input-u-ekor" oninput="saveInput('u-ekor')" placeholder="Informasi tambahan untuk mengakhiri berita..." class="w-full text-sm p-3 border rounded-xl focus:ring-2 focus:ring-teal-400 focus:outline-none h-24 bg-slate-50"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CEK BERITAMU -->
+                    <div class="bg-white rounded-3xl p-5 md:p-6 shadow-lg border-2 border-amber-200">
+                        <h4 class="font-bold text-slate-900 flex items-center gap-2 mb-3"><i class="fa-solid fa-magnifying-glass text-amber-600"></i> Check Your News!</h4>
+                        <div class="space-y-2 text-sm text-slate-700">
+                            <label class="flex items-start gap-2"><input type="checkbox" class="mt-1"> Judul sesuai dengan isi berita.</label>
+                            <label class="flex items-start gap-2"><input type="checkbox" class="mt-1"> Semua poin kerangka sudah dikembangkan menjadi kalimat.</label>
+                            <label class="flex items-start gap-2"><input type="checkbox" class="mt-1"> Unsur 5W+1H sudah lengkap.</label>
+                            <label class="flex items-start gap-2"><input type="checkbox" class="mt-1"> Tidak ada informasi yang tidak ada di datamu.</label>
+                            <label class="flex items-start gap-2"><input type="checkbox" class="mt-1"> Urutan paragraf runtut dan bahasanya milikku sendiri.</label>
+                            <label class="flex items-start gap-2"><input type="checkbox" class="mt-1"> Sudah dibaca ulang dan direvisi.</label>
+                        </div>
+                    </div>
+
+                    <!-- PRATINJAU -->
+                    <div class="bg-white rounded-3xl p-6 md:p-8 shadow-xl border-2 border-slate-800">
+                        <div class="text-center border-b-2 border-slate-800 pb-3 mb-4">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Pratinjau Berita Utuh</p>
+                            <h3 id="preview-u-judul" class="font-serif text-2xl md:text-3xl font-black text-slate-900 mt-2 leading-tight">[ JUDUL BERITA ]</h3>
+                            <p class="text-xs text-slate-600 mt-2">Ditulis oleh: <span id="preview-u-author" class="font-bold">Wartawan Muda</span></p>
+                        </div>
+                        <div class="space-y-3 font-serif text-slate-800 leading-relaxed text-[15px]">
+                            <p id="preview-u-teras" class="whitespace-pre-line"></p>
+                            <p id="preview-u-tubuh" class="whitespace-pre-line"></p>
+                            <p id="preview-u-ekor" class="whitespace-pre-line"></p>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-6 pt-4 border-t">
+                            <button onclick="copyBeritaUtuh()" class="flex-1 min-w-[140px] bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2"><i class="fa-solid fa-copy"></i> Salin Teks</button>
+                            <button onclick="downloadBeritaUtuh()" class="flex-1 min-w-[140px] bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2"><i class="fa-solid fa-file-arrow-down"></i> Unduh Teks (.TXT)</button>
+                            <button onclick="openPdfBeritaModal()" class="flex-1 min-w-[140px] bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2"><i class="fa-solid fa-file-pdf"></i> Unduh PDF</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-workspace" class="hidden space-y-8">
+            <div class="bg-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl flex flex-col md:flex-row justify-between items-center gap-6 no-print">
+                <div>
+                    <span class="bg-emerald-500 text-slate-950 font-black text-xs uppercase px-2.5 py-1 rounded">Interactive Journalist Workspace</span>
+                    <h2 class="text-3xl font-bold font-serif mt-2">Ruang Redaksi &amp; Unduh File</h2>
+                    <p class="text-slate-400 text-sm mt-1">Unduh hasil karya beritamu langsung menjadi file asli di HP/Laptop milikmu!</p>
+                </div>
+                <!-- DOWNLOAD BUTTONS PANEL -->
+                <div class="flex flex-wrap gap-2.5 shrink-0">
+                    <button onclick="downloadAsTextFile()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-4 py-2.5 rounded-xl shadow-md transition flex items-center gap-2 text-xs md:text-sm">
+                        <i class="fa-solid fa-file-arrow-down"></i> Unduh File (.TXT)
+                    </button>
+                    <button onclick="downloadAsHtmlFile()" class="bg-blue-600 hover:bg-blue-500 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-md transition flex items-center gap-2 text-xs md:text-sm">
+                        <i class="fa-solid fa-code"></i> Unduh Koran (.HTML)
+                    </button>
+                    <button onclick="downloadAsJsonFile()" class="bg-purple-600 hover:bg-purple-500 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-md transition flex items-center gap-2 text-xs md:text-sm">
+                        <i class="fa-solid fa-box-archive"></i> Backup (.JSON)
+                    </button>
+                    <button onclick="openPdfHelpModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-5 py-2.5 rounded-xl shadow-lg transition flex items-center gap-2 text-xs md:text-sm">
+                        <i class="fa-solid fa-file-pdf"></i> Cetak / Simpan PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- NEWSPAPER PREVIEW SHEET (PRINTABLE AREA) -->
+            <div class="bg-white rounded-3xl p-8 md:p-12 shadow-2xl border-4 border-slate-900 max-w-4xl mx-auto font-serif relative" id="printable-article">
+                
+                <!-- Newspaper Header Preview -->
+                <div class="border-b-4 border-slate-900 pb-4 mb-6 text-center">
+                    <div class="text-[10px] uppercase font-sans tracking-widest text-slate-500 mb-1 flex justify-between">
+                        <span>Laporan Khusus Jurnalistik</span>
+                        <span>Edisi Cetak Pribadi</span>
+                    </div>
+                    <h1 id="preview-judul" class="text-3xl md:text-5xl font-black text-slate-900 leading-tight uppercase my-3">
+                        [ JUDUL BERITA AKAN TAMPIL DI SINI ]
+                    </h1>
+                    <div class="text-xs font-sans text-slate-600 border-t border-b border-slate-300 py-1.5 mt-2 flex justify-between italic">
+                        <span>Ditulis oleh: <span id="preview-author">Wartawan Muda</span></span>
+                        <span id="preview-date">Senin, 12 Oktober 2026</span>
+                    </div>
+                </div>
+
+                <!-- Live Content Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8 font-sans text-slate-800 text-sm leading-relaxed">
+                    
+                    <!-- Left Column: Lead & Body -->
+                    <div class="md:col-span-8 space-y-6">
+                        <!-- Teras Berita -->
+                        <div class="bg-slate-50 p-4 rounded-xl border-l-4 border-blue-600">
+                            <h4 class="font-bold text-slate-900 font-serif text-base mb-2 uppercase text-blue-900">Teras Berita (Lead)</h4>
+                            <div id="preview-teras" class="whitespace-pre-line text-slate-700">
+                                Belum ada isian Teras Berita.
+                            </div>
+                        </div>
+
+                        <!-- Tubuh Berita -->
+                        <div>
+                            <h4 class="font-bold text-slate-900 font-serif text-lg mb-2 border-b pb-1 uppercase">Tubuh Berita Utama</h4>
+                            <div id="preview-tubuh" class="whitespace-pre-line text-slate-700 leading-relaxed">
+                                Belum ada isian Tubuh Berita.
+                            </div>
+                        </div>
+
+                        <!-- Ekor Berita -->
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <h4 class="font-bold text-slate-800 font-serif text-sm mb-1 uppercase">Ekor Berita / Penutup</h4>
+                            <div id="preview-ekor" class="whitespace-pre-line text-slate-600 text-xs">
+                                Belum ada isian Ekor Berita.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: 5W+1H Fact Box -->
+                    <div class="md:col-span-4 bg-amber-50 p-5 rounded-2xl border border-amber-200 h-fit space-y-4">
+                        <h4 class="font-bold text-amber-900 font-serif text-base border-b border-amber-300 pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-amber-600"></i> Kotak Fakta 5W+1H
+                        </h4>
+                        <div>
+                            <span class="text-[10px] font-bold uppercase text-amber-800 block">Apa Peristiwa:</span>
+                            <span id="preview-apa" class="text-xs font-semibold text-slate-800">-</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold uppercase text-amber-800 block">Siapa Pelaku:</span>
+                            <span id="preview-siapa" class="text-xs font-semibold text-slate-800">-</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold uppercase text-amber-800 block">Di mana Lokasi:</span>
+                            <span id="preview-dimana" class="text-xs font-semibold text-slate-800">-</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold uppercase text-amber-800 block">Kapan Waktu:</span>
+                            <span id="preview-kapan" class="text-xs font-semibold text-slate-800">-</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold uppercase text-amber-800 block">Mengapa Pemicu:</span>
+                            <span id="preview-mengapa" class="text-xs font-semibold text-slate-800">-</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold uppercase text-amber-800 block">Bagaimana Alur:</span>
+                            <span id="preview-bagaimana" class="text-xs font-semibold text-slate-800">-</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer Sign -->
+                <div class="mt-8 border-t pt-4 text-center text-xs text-slate-400 font-sans">
+                    Dibuat melalui Portal Kartu Petunjuk Jurnalistik &amp; Penulisan Berita Interaktif
+                </div>
+            </div>
+
+            <!-- TOMBOL KELUAR DI AKHIR -->
+            <div class="no-print max-w-4xl mx-auto bg-white border-2 border-slate-300 rounded-3xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+                <div class="text-sm text-slate-600 text-center md:text-left">
+                    <p class="font-bold text-slate-900 font-serif text-base">Sudah selesai menulis?</p>
+                    <p>Pastikan hasilmu sudah diunduh. Drafmu tersimpan otomatis di perangkat ini. Setelah keluar, teman lain bisa masuk dengan menuliskan namanya.</p>
+                </div>
+                <button onclick="requestLogout()" class="shrink-0 bg-slate-900 hover:bg-red-600 text-white font-extrabold px-6 py-3 rounded-xl shadow-lg transition flex items-center gap-2">
+                    <i class="fa-solid fa-right-from-bracket"></i> Keluar
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- AREA CETAK KHUSUS BERITA UTUH (hanya muncul saat cetak / simpan PDF) -->
+    <div id="print-berita">
+        <p id="pb-label">BERITA</p>
+        <h1 id="pb-judul"></h1>
+        <p id="pb-meta"></p>
+        <div id="pb-isi"></div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-12 text-center text-xs no-print">
+        <div class="max-w-7xl mx-auto px-4 space-y-2">
+            <p class="font-serif text-slate-300">"Tiru caranya, bukan isinya. Selamat berkarya dalam dunia jurnalistik!"</p>
+            <p>© 2026 Portal Kartu Petunjuk 5W+1H &amp; Kerangka Berita. All rights reserved.</p>
+            <p class="text-slate-300 font-semibold">Dikembangkan oleh Fatimatuz Zahra Al Azkiya’</p>
+        </div>
+    </footer>
+
+    <!-- SCRIPT DATA & LOGIC -->
+    <script>
+        // DATA DICTIONARY BASED DIRECTLY ON PDF DOCUMENTS
+        const data5W1H = {
+            apa: {
+                title: "Apa",
+                p1: "Peristiwa apa yang paling penting dan terjadi? Tulis dalam satu kalimat singkat.",
+                p2: "Pastikan kalimatnya memuat kegiatan inti, bukan hanya nama acaranya. Gunakan kata kerja, misalnya meluncurkan, menggelar, meraih.",
+                contoh: "Sekolah meluncurkan program \"Kantin Sehat\" yang menyediakan menu rendah gula dan membatasi gorengan."
+            },
+            siapa: {
+                title: "Siapa",
+                p1: "Siapa yang terlibat langsung dalam peristiwa ini?",
+                p2: "Sebutkan pelaku utama beserta perannya, dan jangan lupa pihak yang terdampak.",
+                contoh: "Pengurus OSIS bersama pengelola kantin dan Wakil Kepala Sekolah Bidang Kesiswaan, dengan sasaran seluruh siswa."
+            },
+            dimana: {
+                title: "Di mana",
+                p1: "Di tempat mana peristiwa ini berlangsung?",
+                p2: "Tulis tempatnya secara spesifik (bagian sekolah atau ruangan), bukan sekadar \"di sekolah\".",
+                contoh: "Di area kantin utama sekolah, dekat lapangan upacara."
+            },
+            kapan: {
+                title: "Kapan",
+                p1: "Kapan peristiwa ini terjadi?",
+                p2: "Tulis hari, tanggal, dan jika perlu waktunya. Cek lagi apakah tulisannya sudah lengkap.",
+                contoh: "Senin, 12 Oktober 2026, pada jam istirahat pertama."
+            },
+            mengapa: {
+                title: "Mengapa",
+                p1: "Apa yang terjadi sebelum peristiwa ini? Apa yang memicunya?",
+                p2: "Tulis minimal dua alasan atau penyebab. Gunakan kata penghubung seperti karena, sebab, akibat.",
+                contoh: "Program ini digagas karena survei OSIS menunjukkan sebagian besar siswa rutin membeli minuman manis dan gorengan, sehingga sekolah ingin menjaga kesehatan dan konsentrasi belajar siswa."
+            },
+            bagaimana: {
+                title: "Bagaimana",
+                p1: "Bagaimana peristiwa ini berlangsung dari awal sampai akhir? Ceritakan urutannya.",
+                p2: "Tambahkan detail yang bisa dilihat atau didengar, seperti kegiatan, benda, dan pernyataan seseorang. Pikirkan juga bagaimana kelanjutannya.",
+                contoh: "Peluncuran dibuka dengan sambutan Waka Kesiswaan, lalu siswa mencoba menu baru seperti buah potong dan makanan kukus. Setiap siswa yang membeli menu sehat mendapat stempel di kartu, dan program akan dievaluasi setelah satu bulan."
+            }
+        };
+
+        const dataKerangka = {
+            judul: {
+                title: "Judul Berita",
+                p1: "Apa inti peristiwa yang paling ingin kamu kabarkan? Pilih satu saja.",
+                p2: "Buat judul sementara yang singkat (sekitar 5-10 kata), memuat peristiwa dan pelaku utama, serta menggunakan kata kerja. Judul boleh direvisi nanti.",
+                contoh: "Kantin Sehat Resmi Diluncurkan, Gorengan Dibatasi"
+            },
+            teras: {
+                title: "Teras Berita (Lead)",
+                p1: "Lihat kembali kartu 5W+1H-mu. Informasi mana yang paling penting dan paling ingin diketahui pembaca lebih dulu?",
+                p2: "Pilih 3-4 unsur terpenting (biasanya apa, siapa, kapan, di mana) lalu tulis dalam poin kata kunci. Unsur mengapa dan bagaimana boleh dipindah ke tubuh berita.",
+                contoh: "• Apa: peluncuran program Kantin Sehat\n• Siapa: OSIS dan pengelola kantin\n• Kapan: Senin, 12 Oktober 2026\n• Di mana: kantin utama sekolah"
+            },
+            tubuh: {
+                title: "Tubuh Berita (Body)",
+                p1: "Informasi apa yang membuat pembaca paham peristiwa ini lebih dalam? Cek unsur mengapa dan bagaimana pada kartu 5W+1H.",
+                p2: "Lengkapi dengan empat jenis informasi: penyebab, jalannya kegiatan, kutipan narasumber, dan dampak atau data pendukung. Tulis empat poin, masing-masing satu kata kunci.",
+                contoh: "1. Penyebab: survei OSIS, banyak siswa membeli minuman manis dan gorengan\n2. Jalannya acara: sambutan Waka Kesiswaan, siswa mencoba menu baru\n3. Kutipan: pernyataan Waka Kesiswaan tentang tujuan program\n4. Dampak: kartu stempel bagi pembeli menu sehat"
+            },
+            ekor: {
+                title: "Ekor Berita (Tail)",
+                p1: "Apa yang ingin pembaca ingat atau ketahui setelah selesai membaca?",
+                p2: "Pilih 2-3 poin, misalnya kelanjutan program, evaluasi, atau harapan dari narasumber. Jangan mengulang isi teras berita.",
+                contoh: "• Program dievaluasi setelah satu bulan\n• Harapan OSIS agar siswa terbiasa memilih menu sehat"
+            }
+        };
+
+        // Current Active States
+        let active5w1hKey = 'apa';
+        let active5w1hStep = 1;
+
+        let activeKerangkaKey = 'judul';
+        let activeKerangkaStep = 1;
+
+        // User Input Draft Storage
+        // Isi dengan tautan website yang dihosting (mis. Netlify/Vercel) agar tombol "Buka versi lengkap" aktif
+        const FULL_SITE_URL = '';
+        const inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+        let currentWriter = '';
+        const draftKey = () => 'journalism_draft_v3_' + currentWriter.toLowerCase().replace(/\s+/g, ' ');
+        const emptyDraft = () => ({
+            apa: '', siapa: '', dimana: '', kapan: '', mengapa: '', bagaimana: '',
+            'k-judul': '', 'k-teras': '', 'k-tubuh': '', 'k-ekor': '',
+            'u-judul': '', 'u-teras': '', 'u-tubuh': '', 'u-ekor': ''
+        });
+        let userDraft = {
+            apa: '', siapa: '', dimana: '', kapan: '', mengapa: '', bagaimana: '',
+            'k-judul': '', 'k-teras': '', 'k-tubuh': '', 'k-ekor': '',
+            'u-judul': '', 'u-teras': '', 'u-tubuh': '', 'u-ekor': ''
+        };
+
+        // Initialize App
+        window.onload = function() {
+            // Set current date string
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = now.toLocaleDateString('id-ID', options);
+            document.getElementById('current-date').innerText = dateStr;
+            document.getElementById('preview-date').innerText = dateStr;
+
+            // Draf dimuat setelah murid memasukkan nama (lihat loginWriter)
+            if (inFrame) {
+                document.getElementById('frame-banner').classList.remove('hidden');
+                if (FULL_SITE_URL) { document.getElementById('frame-banner-full').classList.remove('hidden'); }
+            }
+            setTimeout(() => document.getElementById('login-name').focus(), 100);
+
+            // Render initial cards
+            render5w1hCard();
+            renderKerangkaCard();
+            updatePreview();
+            updateWordCounters();
+        };
+
+        // LOGIN & GANTI NAMA
+        function loginWriter() {
+            const input = document.getElementById('login-name');
+            const err = document.getElementById('login-error');
+            const name = input.value.replace(/\s+/g, ' ').trim();
+            if (name.length < 2) {
+                err.innerText = 'Tuliskan namamu dulu ya (minimal 2 huruf).';
+                err.classList.remove('hidden');
+                return;
+            }
+            err.classList.add('hidden');
+            currentWriter = name;
+            userDraft = emptyDraft();
+            try {
+                const saved = localStorage.getItem(draftKey());
+                if (saved) { userDraft = Object.assign(emptyDraft(), JSON.parse(saved)); }
+            } catch (e) { console.error('Gagal memuat draf', e); }
+            populateInputs();
+            updatePreview();
+            updateWordCounters();
+            document.getElementById('writer-name-chip').innerText = currentWriter;
+            const chip = document.getElementById('writer-chip');
+            chip.classList.remove('hidden');
+            chip.classList.add('flex');
+            document.getElementById('login-screen').classList.add('hidden');
+            switchMainTab('dashboard');
+            showToast('Selamat datang, ' + currentWriter + '!');
+        }
+
+        function changeWriter() {
+            if (currentWriter) { showToast('Sampai jumpa, ' + currentWriter + '! Drafmu sudah tersimpan.', 'info'); }
+            currentWriter = '';
+            userDraft = emptyDraft();
+            populateInputs();
+            updatePreview();
+            updateWordCounters();
+            const chip = document.getElementById('writer-chip');
+            chip.classList.add('hidden');
+            chip.classList.remove('flex');
+            const input = document.getElementById('login-name');
+            input.value = '';
+            document.getElementById('login-screen').classList.remove('hidden');
+            setTimeout(() => input.focus(), 100);
+        }
+
+        // KONFIRMASI KELUAR
+        function requestLogout() { document.getElementById('logout-modal').classList.remove('hidden'); }
+        function closeLogoutModal() { document.getElementById('logout-modal').classList.add('hidden'); }
+        function confirmLogout() { closeLogoutModal(); changeWriter(); }
+
+        // GANTI NAMA (misalnya ada salah ketik saat masuk)
+        function keyForName(name) { return 'journalism_draft_v3_' + name.toLowerCase().replace(/\s+/g, ' '); }
+        function openRename() {
+            const input = document.getElementById('rename-input');
+            input.value = currentWriter;
+            document.getElementById('rename-error').classList.add('hidden');
+            document.getElementById('rename-modal').classList.remove('hidden');
+            setTimeout(() => { input.focus(); input.select(); }, 100);
+        }
+        function closeRename() { document.getElementById('rename-modal').classList.add('hidden'); }
+        function saveRename() {
+            const err = document.getElementById('rename-error');
+            const name = document.getElementById('rename-input').value.replace(/\s+/g, ' ').trim();
+            if (name.length < 2) {
+                err.innerText = 'Tuliskan namamu dulu ya (minimal 2 huruf).';
+                err.classList.remove('hidden');
+                return;
+            }
+            const oldKey = draftKey();
+            const newKey = keyForName(name);
+            if (newKey !== oldKey) {
+                let exists = false;
+                try { exists = !!localStorage.getItem(newKey); } catch (e) {}
+                if (exists) {
+                    err.innerText = 'Nama itu sudah punya draf di perangkat ini. Gunakan nama lain, atau keluar lalu masuk dengan nama tersebut.';
+                    err.classList.remove('hidden');
+                    return;
+                }
+                try {
+                    localStorage.setItem(newKey, JSON.stringify(userDraft));
+                    localStorage.removeItem(oldKey);
+                } catch (e) { console.error('Gagal memindahkan draf', e); }
+            }
+            currentWriter = name;
+            document.getElementById('writer-name-chip').innerText = currentWriter;
+            updatePreview();
+            closeRename();
+            showToast('Nama diperbarui menjadi ' + currentWriter + '.');
+        }
+
+        // TAB TULIS BERITA UTUH
+        const beritaHelp = {
+            1: '<b>Petunjuk 1.</b> Lihat poin-poin kerangkamu di sebelah kiri. Ubah setiap poin menjadi satu kalimat dengan bahasamu sendiri. Alurnya: poin, kalimat, paragraf, lalu teks berita utuh.',
+            2: '<b>Petunjuk 2.</b> Tentukan <b>kalimat inti</b> (informasi utama tiap bagian), lalu tambahkan <b>kalimat pendukung</b> yang menjelaskan waktu, tempat, peserta, penyebab, atau data. Hubungkan kalimat dengan kata penghubung seperti <i>kemudian, selain itu, sementara itu</i>. Jangan menambah informasi yang tidak ada di datamu.',
+            3: '<b>Contoh</b> (topik fiktif Kantin Sehat):<br><b>Poin teras:</b> Apa: peluncuran Kantin Sehat; Siapa: OSIS dan pengelola kantin; Kapan: Senin, 12 Oktober 2026; Di mana: kantin utama.<br><b>Kalimat:</b> OSIS bersama pengelola kantin meluncurkan program Kantin Sehat. Peluncuran berlangsung Senin, 12 Oktober 2026 di kantin utama sekolah.<br><b>Paragraf:</b> OSIS bersama pengelola kantin meluncurkan program Kantin Sehat di kantin utama sekolah pada Senin, 12 Oktober 2026. Program ini menyediakan menu rendah gula dan membatasi gorengan.<br><i class="text-xs">Tiru caranya, bukan isinya.</i>'
+        };
+        function showBeritaHelp(n) {
+            const box = document.getElementById('bh-text');
+            box.innerHTML = beritaHelp[n];
+            box.classList.remove('hidden');
+            [1, 2, 3].forEach(i => {
+                document.getElementById('bh-btn-' + i).className = 'flex-1 text-xs font-bold py-2 rounded-lg border ' +
+                    (i === n ? (i === 3 ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-teal-600 text-white border-teal-700') : 'bg-white text-slate-700');
+            });
+        }
+        function updateBeritaGuide() {
+            const map = { 'guide-judul': 'k-judul', 'guide-teras': 'k-teras', 'guide-tubuh': 'k-tubuh', 'guide-ekor': 'k-ekor',
+                          'guide-apa': 'apa', 'guide-siapa': 'siapa', 'guide-dimana': 'dimana', 'guide-kapan': 'kapan', 'guide-mengapa': 'mengapa', 'guide-bagaimana': 'bagaimana' };
+            Object.keys(map).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.innerText = (userDraft[map[id]] || '').trim() || '-'; }
+            });
+            const empty = !['k-judul', 'k-teras', 'k-tubuh', 'k-ekor'].some(k => (userDraft[k] || '').trim());
+            const note = document.getElementById('guide-empty');
+            if (note) { note.classList.toggle('hidden', !empty); }
+        }
+        function useKerangkaJudul() {
+            const j = (userDraft['k-judul'] || '').trim();
+            if (!j) { showToast('Judul di kerangka masih kosong.', 'info'); return; }
+            document.getElementById('input-u-judul').value = j;
+            saveInput('u-judul');
+        }
+        function beritaUtuhText() {
+            const judul = (userDraft['u-judul'] || '').trim() || (userDraft['k-judul'] || '').trim() || 'Berita Jurnalistik';
+            const bagian = ['u-teras', 'u-tubuh', 'u-ekor'].map(k => (userDraft[k] || '').trim()).filter(Boolean);
+            return { judul, bagian, ada: bagian.length > 0 };
+        }
+        function copyBeritaUtuh() {
+            const b = beritaUtuhText();
+            if (!b.ada) { showToast('Tulis dulu beritamu ya.', 'info'); return; }
+            const teks = b.judul + '\nDitulis oleh: ' + (currentWriter || 'Wartawan Muda') + '\n\n' + b.bagian.join('\n\n');
+            const done = () => showToast('Teks berita berhasil disalin!');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(teks).then(done).catch(() => fallbackCopy(teks, done));
+            } else { fallbackCopy(teks, done); }
+        }
+        function fallbackCopy(teks, done) {
+            const ta = document.createElement('textarea');
+            ta.value = teks; document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); done(); } catch (e) { showToast('Gagal menyalin. Salin manual ya.', 'info'); }
+            document.body.removeChild(ta);
+        }
+        function downloadBeritaUtuh() {
+            const b = beritaUtuhText();
+            if (!b.ada) { showToast('Tulis dulu beritamu ya.', 'info'); return; }
+            const dateStr = document.getElementById('current-date').innerText;
+            let t = b.judul.toUpperCase() + '\n';
+            t += 'Ditulis oleh: ' + (currentWriter || 'Wartawan Muda') + '\n';
+            t += 'Tanggal: ' + dateStr + '\n\n';
+            t += b.bagian.join('\n\n') + '\n';
+            const nama = (currentWriter || 'berita').toLowerCase().replace(/[^a-z0-9]/g, '_');
+            triggerFileDownload(t, 'berita_utuh_' + nama + '.txt', 'text/plain;charset=utf-8');
+            if (!inFrame) { showToast('Berita utuh berhasil diunduh!'); }
+        }
+
+        // MODE SEMATAN (mis. Google Sites): unduhan diblokir browser, sediakan salin teks
+        function openFullSite() { if (FULL_SITE_URL) { window.open(FULL_SITE_URL, '_blank'); } }
+        function showFrameModal(content) {
+            document.getElementById('frame-text').value = content;
+            document.getElementById('frame-open-full').classList.toggle('hidden', !FULL_SITE_URL);
+            document.getElementById('frame-modal').classList.remove('hidden');
+        }
+        function closeFrameModal() { document.getElementById('frame-modal').classList.add('hidden'); }
+        function copyFrameText() {
+            const ta = document.getElementById('frame-text');
+            ta.focus(); ta.select();
+            let ok = false;
+            try { ok = document.execCommand('copy'); } catch (e) {}
+            if (!ok && navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(ta.value).then(() => showToast('Teks berhasil disalin!')).catch(() => showToast('Blok teksnya lalu salin manual ya.', 'info'));
+                return;
+            }
+            showToast(ok ? 'Teks berhasil disalin!' : 'Blok teksnya lalu salin manual ya.', ok ? 'success' : 'info');
+        }
+
+        // TOAST NOTIFICATION UTILITY
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-red-600' : 'bg-blue-600');
+            const icon = type === 'success' ? 'fa-circle-check' : (type === 'error' ? 'fa-triangle-exclamation' : 'fa-info-circle');
+
+            toast.className = `${bgColor} text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-bold transition transform translate-y-2 opacity-0 duration-300`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-lg"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Animate out & destroy
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // NAVIGATION TABS HANDLING
+        function switchMainTab(tabName) {
+            document.getElementById('tab-dashboard').classList.add('hidden');
+            document.getElementById('tab-5w1h').classList.add('hidden');
+            document.getElementById('tab-kerangka').classList.add('hidden');
+            document.getElementById('tab-berita').classList.add('hidden');
+            document.getElementById('tab-workspace').classList.add('hidden');
+
+            const navs = ['dashboard', '5w1h', 'kerangka', 'berita', 'workspace'];
+            navs.forEach(n => {
+                const btn = document.getElementById(`nav-${n}`);
+                if (btn) {
+                    btn.className = "px-5 py-2.5 rounded-xl font-bold text-sm md:text-base transition duration-200 flex items-center gap-2 shadow-sm border bg-white text-slate-700 hover:bg-slate-100 border-slate-300";
+                }
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            if (activeBtn) {
+                if (tabName === 'dashboard') {
+                    activeBtn.className = "px-5 py-2.5 rounded-xl font-bold text-sm md:text-base transition duration-200 flex items-center gap-2 shadow-sm border bg-blue-600 text-white border-blue-700";
+                } else if (tabName === '5w1h') {
+                    activeBtn.className = "px-5 py-2.5 rounded-xl font-bold text-sm md:text-base transition duration-200 flex items-center gap-2 shadow-sm border bg-amber-500 text-white border-amber-600";
+                } else if (tabName === 'kerangka') {
+                    activeBtn.className = "px-5 py-2.5 rounded-xl font-bold text-sm md:text-base transition duration-200 flex items-center gap-2 shadow-sm border bg-purple-600 text-white border-purple-700";
+                } else if (tabName === 'berita') {
+                    activeBtn.className = "px-5 py-2.5 rounded-xl font-bold text-sm md:text-base transition duration-200 flex items-center gap-2 shadow-sm border bg-teal-600 text-white border-teal-700";
+                    updateBeritaGuide();
+                } else if (tabName === 'workspace') {
+                    activeBtn.className = "px-5 py-2.5 rounded-xl font-bold text-sm md:text-base transition duration-200 flex items-center gap-2 shadow-sm border bg-emerald-600 text-white border-emerald-700";
+                    updatePreview();
+                }
+            }
+        }
+
+        // 5W+1H CARD LOGIC
+        function selectElement(key) {
+            active5w1hKey = key;
+            active5w1hStep = 1;
+            render5w1hCard();
+            switchMainTab('5w1h');
+        }
+
+        function goTo5w1hStep(step) {
+            active5w1hStep = step;
+            render5w1hCard();
+        }
+
+        function render5w1hCard() {
+            const data = data5W1H[active5w1hKey];
+            
+            document.getElementById('card-5w1h-badge').innerText = data.title.toUpperCase();
+            document.getElementById('title-5w1h-p1').innerText = `Petunjuk 1 (${data.title})`;
+            document.getElementById('text-5w1h-p1').innerText = data.p1;
+
+            document.getElementById('title-5w1h-p2').innerText = `Petunjuk 2 (${data.title})`;
+            document.getElementById('text-5w1h-p2').innerText = data.p2;
+
+            document.getElementById('text-5w1h-contoh').innerText = `"${data.contoh}"`;
+
+            document.getElementById('step-5w1h-1').classList.toggle('hidden', active5w1hStep !== 1);
+            document.getElementById('step-5w1h-2').classList.toggle('hidden', active5w1hStep !== 2);
+            document.getElementById('step-5w1h-3').classList.toggle('hidden', active5w1hStep !== 3);
+
+            const dotsContainer = document.getElementById('step-dots-5w1h');
+            dotsContainer.innerHTML = [1, 2, 3].map(s => 
+                `<span class="w-3 h-3 rounded-full ${s === active5w1hStep ? 'bg-amber-500 scale-110' : 'bg-slate-200'} transition duration-200"></span>`
+            ).join('');
+
+            const keys = ['apa', 'siapa', 'dimana', 'kapan', 'mengapa', 'bagaimana'];
+            keys.forEach(k => {
+                const btn = document.getElementById(`btn-5w1h-${k}`);
+                if (btn) {
+                    if (k === active5w1hKey) {
+                        btn.className = "px-4 py-2 rounded-xl font-bold text-sm transition flex items-center gap-2 border bg-amber-500 text-white border-amber-600 shadow-md";
+                    } else {
+                        btn.className = "px-4 py-2 rounded-xl font-bold text-sm transition flex items-center gap-2 border bg-white text-slate-700 hover:bg-amber-50 border-slate-200";
+                    }
+                }
+            });
+        }
+
+        // KERANGKA CARD LOGIC
+        function selectKerangka(key) {
+            activeKerangkaKey = key;
+            activeKerangkaStep = 1;
+            renderKerangkaCard();
+            switchMainTab('kerangka');
+        }
+
+        function goToKerangkaStep(step) {
+            activeKerangkaStep = step;
+            renderKerangkaCard();
+        }
+
+        function renderKerangkaCard() {
+            const data = dataKerangka[activeKerangkaKey];
+
+            document.getElementById('card-kerangka-badge').innerText = data.title.toUpperCase();
+            document.getElementById('title-kerangka-p1').innerText = `Petunjuk 1 (${data.title})`;
+            document.getElementById('text-kerangka-p1').innerText = data.p1;
+
+            document.getElementById('title-kerangka-p2').innerText = `Petunjuk 2 (${data.title})`;
+            document.getElementById('text-kerangka-p2').innerText = data.p2;
+
+            document.getElementById('text-kerangka-contoh').innerText = data.contoh;
+
+            document.getElementById('step-kerangka-1').classList.toggle('hidden', activeKerangkaStep !== 1);
+            document.getElementById('step-kerangka-2').classList.toggle('hidden', activeKerangkaStep !== 2);
+            document.getElementById('step-kerangka-3').classList.toggle('hidden', activeKerangkaStep !== 3);
+
+            const dotsContainer = document.getElementById('step-dots-kerangka');
+            dotsContainer.innerHTML = [1, 2, 3].map(s => 
+                `<span class="w-3 h-3 rounded-full ${s === activeKerangkaStep ? 'bg-purple-600 scale-110' : 'bg-slate-200'} transition duration-200"></span>`
+            ).join('');
+
+            const keys = ['judul', 'teras', 'tubuh', 'ekor'];
+            keys.forEach(k => {
+                const btn = document.getElementById(`btn-kerangka-${k}`);
+                if (btn) {
+                    if (k === activeKerangkaKey) {
+                        btn.className = "px-5 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 border bg-purple-600 text-white border-purple-700 shadow-md";
+                    } else {
+                        btn.className = "px-5 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 border bg-white text-slate-700 hover:bg-purple-50 border-slate-200";
+                    }
+                }
+            });
+        }
+
+        // SAVE & INPUT LOGIC
+        function saveInput(field) {
+            const el = document.getElementById(`input-${field}`);
+            if (el) {
+                userDraft[field] = el.value;
+                try { localStorage.setItem(draftKey(), JSON.stringify(userDraft)); } catch (e) { console.error('Gagal menyimpan', e); }
+                updatePreview();
+                updateWordCounters();
+                
+                // Flash status indicator
+                const statusEl = document.getElementById('save-status-indicator');
+                statusEl.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-amber-500"></i> Menyimpan...';
+                statusEl.className = 'text-xs bg-amber-50 text-amber-800 font-bold px-3 py-1.5 rounded-full border border-amber-200 flex items-center gap-1.5';
+                
+                clearTimeout(window.saveTimer);
+                window.saveTimer = setTimeout(() => {
+                    statusEl.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-500"></i> Tersimpan Otomatis';
+                    statusEl.className = 'text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1.5 rounded-full border border-emerald-300 flex items-center gap-1.5';
+                }, 500);
+            }
+        }
+
+        function populateInputs() {
+            Object.keys(userDraft).forEach(key => {
+                const el = document.getElementById(`input-${key}`);
+                if (el) {
+                    el.value = userDraft[key] || '';
+                }
+            });
+        }
+
+        function updateWordCounters() {
+            Object.keys(userDraft).forEach(key => {
+                const text = userDraft[key] || '';
+                const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+                const counterEl = document.getElementById(`count-${key}`);
+                if (counterEl) {
+                    counterEl.innerText = `${words} kata`;
+                }
+            });
+        }
+
+        function updatePreview() {
+            document.getElementById('preview-author').innerText = currentWriter || 'Wartawan Muda';
+            document.getElementById('preview-apa').innerText = userDraft.apa || '-';
+            document.getElementById('preview-siapa').innerText = userDraft.siapa || '-';
+            document.getElementById('preview-dimana').innerText = userDraft.dimana || '-';
+            document.getElementById('preview-kapan').innerText = userDraft.kapan || '-';
+            document.getElementById('preview-mengapa').innerText = userDraft.mengapa || '-';
+            document.getElementById('preview-bagaimana').innerText = userDraft.bagaimana || '-';
+
+            document.getElementById('preview-judul').innerText = userDraft['k-judul'] || '[ JUDUL BERITA AKAN TAMPIL DI SINI ]';
+            document.getElementById('preview-teras').innerText = userDraft['k-teras'] || 'Belum ada isian Teras Berita.';
+            document.getElementById('preview-tubuh').innerText = userDraft['k-tubuh'] || 'Belum ada isian Tubuh Berita.';
+            document.getElementById('preview-ekor').innerText = userDraft['k-ekor'] || 'Belum ada isian Ekor Berita.';
+
+            // Pratinjau tab Tulis Berita Utuh
+            const pj = document.getElementById('preview-u-judul');
+            if (pj) {
+                pj.innerText = (userDraft['u-judul'] || '').trim() || '[ JUDUL BERITA ]';
+                document.getElementById('preview-u-author').innerText = currentWriter || 'Wartawan Muda';
+                document.getElementById('preview-u-teras').innerText = userDraft['u-teras'] || '';
+                document.getElementById('preview-u-tubuh').innerText = userDraft['u-tubuh'] || '';
+                document.getElementById('preview-u-ekor').innerText = userDraft['u-ekor'] || '';
+            }
+        }
+
+        // RESET DRAF MODAL LOGIC
+        function openResetModal() {
+            document.getElementById('reset-modal').classList.remove('hidden');
+        }
+
+        function closeResetModal() {
+            document.getElementById('reset-modal').classList.add('hidden');
+        }
+
+        function confirmResetAll() {
+            userDraft = emptyDraft();
+            try { localStorage.removeItem(draftKey()); } catch (e) {}
+            populateInputs();
+            updatePreview();
+            updateWordCounters();
+            closeResetModal();
+            showToast('Seluruh isian draf telah berhasil direset!', 'error');
+        }
+
+        // FILE DOWNLOAD UTILITY (BLOB DOWNLOAD TO HP / LAPTOP)
+        function triggerFileDownload(content, filename, contentType) {
+            if (inFrame) { showFrameModal(content); return; }
+            const blob = new Blob([content], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+        }
+
+        // 1. DOWNLOAD AS TXT FILE
+        function downloadAsTextFile() {
+            const title = userDraft['k-judul'] || 'Berita Jurnalistik';
+            const dateStr = document.getElementById('current-date').innerText;
+
+            let textContent = `========================================================\n`;
+            textContent += `             LAPORAN BERITA JURNALISTIK                 \n`;
+            textContent += `========================================================\n`;
+            textContent += `Judul Berita : ${title}\n`;
+            textContent += `Tanggal      : ${dateStr}\n`;
+            textContent += `Penulis      : ${currentWriter || 'Wartawan Muda'}\n`;
+            textContent += `========================================================\n\n`;
+
+            textContent += `--- KERANGKA BERITA ---\n\n`;
+            textContent += `1. TERAS BERITA (LEAD):\n${userDraft['k-teras'] || '-'}\n\n`;
+            textContent += `2. TUBUH BERITA (BODY):\n${userDraft['k-tubuh'] || '-'}\n\n`;
+            textContent += `3. EKOR BERITA (TAIL):\n${userDraft['k-ekor'] || '-'}\n\n`;
+
+            textContent += `========================================================\n`;
+            textContent += `--- KOTAK FAKTA UNSUR 5W + 1H ---\n`;
+            textContent += `========================================================\n`;
+            textContent += `• Apa (Peristiwa)   : ${userDraft.apa || '-'}\n`;
+            textContent += `• Siapa (Pelaku)    : ${userDraft.siapa || '-'}\n`;
+            textContent += `• Di mana (Lokasi)  : ${userDraft.dimana || '-'}\n`;
+            textContent += `• Kapan (Waktu)     : ${userDraft.kapan || '-'}\n`;
+            textContent += `• Mengapa (Pemicu)  : ${userDraft.mengapa || '-'}\n`;
+            textContent += `• Bagaimana (Alur)  : ${userDraft.bagaimana || '-'}\n`;
+            textContent += `========================================================\n`;
+
+            const safeFilename = title.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_berita.txt';
+            triggerFileDownload(textContent, safeFilename, 'text/plain;charset=utf-8');
+            if (!inFrame) { showToast('File Teks (.TXT) Berhasil Diunduh ke Perangkat!'); }
+        }
+
+        // 2. DOWNLOAD AS HTML / STANDALONE KORAN FILE
+        function downloadAsHtmlFile() {
+            const printableArea = document.getElementById('printable-article').outerHTML;
+            const title = userDraft['k-judul'] || 'Berita Jurnalistik';
+
+            const fullHtml = `<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-100 p-4 md:p-8">
+    ${printableArea}
+</body>
+</html>`;
+
+            const safeFilename = title.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_koran.html';
+            triggerFileDownload(fullHtml, safeFilename, 'text/html;charset=utf-8');
+            if (!inFrame) { showToast('File Koran (.HTML) Berhasil Diunduh!'); }
+        }
+
+        // 3. DOWNLOAD AS JSON BACKUP
+        function downloadAsJsonFile() {
+            const title = userDraft['k-judul'] || 'backup_berita';
+            const dataStr = JSON.stringify(Object.assign({ penulis: currentWriter }, userDraft), null, 2);
+            const safeFilename = title.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_data.json';
+            
+            triggerFileDownload(dataStr, safeFilename, 'application/json');
+            if (!inFrame) { showToast('File Backup (.JSON) Berhasil Diunduh!'); }
+        }
+
+        // PDF MODAL GUIDANCE LOGIC
+        let printTarget = 'workspace';
+        function openPdfHelpModal() {
+            printTarget = 'workspace';
+            updatePreview();
+            document.getElementById('pdf-help-modal').classList.remove('hidden');
+        }
+
+        function closePdfHelpModal() {
+            document.getElementById('pdf-help-modal').classList.add('hidden');
+        }
+
+        function openPdfBeritaModal() {
+            const b = beritaUtuhText();
+            if (!b.ada) { showToast('Tulis dulu beritamu ya.', 'info'); return; }
+            printTarget = 'berita';
+            document.getElementById('pdf-help-modal').classList.remove('hidden');
+        }
+
+        function fillPrintBerita() {
+            const b = beritaUtuhText();
+            document.getElementById('pb-judul').innerText = b.judul;
+            document.getElementById('pb-meta').innerText = 'Ditulis oleh: ' + (currentWriter || 'Wartawan Muda') + '  |  ' + document.getElementById('current-date').innerText;
+            const isi = document.getElementById('pb-isi');
+            isi.innerHTML = '';
+            b.bagian.forEach(t => { const p = document.createElement('p'); p.innerText = t; isi.appendChild(p); });
+        }
+
+        const originalTitle = document.title;
+        window.addEventListener('afterprint', () => {
+            document.body.classList.remove('print-berita');
+            document.title = originalTitle;
+        });
+
+        function executePrint() {
+            closePdfHelpModal();
+            if (inFrame) {
+                if (printTarget === 'berita') { downloadBeritaUtuh(); } else { downloadAsTextFile(); }
+                return;
+            }
+            if (printTarget === 'berita') {
+                fillPrintBerita();
+                document.body.classList.add('print-berita');
+                document.title = 'Berita_Utuh_' + (currentWriter || 'Wartawan_Muda').replace(/\s+/g, '_');
+            }
+            setTimeout(() => {
+                window.print();
+            }, 200);
+        }
+    </script>
+</body>
+</html>
